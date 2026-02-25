@@ -4,7 +4,7 @@ const nextConfig = {
     serverActions: {
       allowedOrigins: [
         "localhost:3000",
-        "*.app.github.dev",
+        "literate-space-engine-ww9j77jrwvqcg49p-3000.app.github.dev",
       ],
     },
   },
