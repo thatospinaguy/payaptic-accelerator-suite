@@ -18,7 +18,7 @@ export default function SignInPage() {
 
         {/* Clerk sign-in card */}
         <div className="overflow-hidden rounded-xl shadow-lg">
-          <SignIn path="/sign-in" />
+          <SignIn routing="hash" />
         </div>
       </div>
     </div>

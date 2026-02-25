@@ -18,7 +18,7 @@ export default function SignUpPage() {
 
         {/* Clerk sign-up card */}
         <div className="overflow-hidden rounded-xl shadow-lg">
-          <SignUp path="/sign-up" />
+          <SignUp routing="hash" />
         </div>
       </div>
     </div>
