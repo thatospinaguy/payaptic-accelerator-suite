@@ -1,57 +1,63 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Upload, Calculator, DollarSign } from "lucide-react";
-import type { ToolConfig, ToolIconName } from "@/lib/tools-config";
+import { FileUp, Scale, Calculator } from "lucide-react";
+import type { Tool } from "@/lib/tools-config";
 
-const iconMap: Record<ToolIconName, React.ComponentType<{ className?: string }>> = {
-  Upload,
+const iconMap = {
+  FileUp,
+  Scale,
   Calculator,
-  DollarSign,
-};
+} as const;
 
-interface ToolCardProps {
-  tool: ToolConfig;
-}
+export default function ToolCard({ tool }: { tool: Tool }) {
+  const Icon = iconMap[tool.icon];
+  const isActive = tool.status === "active";
 
-export default function ToolCard({ tool }: ToolCardProps) {
-  const Icon = iconMap[tool.iconName];
-  const isComingSoon = tool.status === "coming-soon";
-
-  return (
-    <Link
-      href={isComingSoon ? "#" : tool.route}
-      onClick={isComingSoon ? (e) => e.preventDefault() : undefined}
-      className={`group relative flex flex-col rounded-xl border bg-[var(--payaptic-surface)] p-6 transition-shadow ${
-        isComingSoon
-          ? "cursor-not-allowed border-[var(--payaptic-border)] opacity-60"
-          : "border-[var(--payaptic-border)] hover:shadow-lg"
+  const card = (
+    <div
+      className={`flex flex-col rounded-2xl bg-white p-6 shadow-sm ${
+        isActive
+          ? "cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-md"
+          : "cursor-not-allowed opacity-50"
       }`}
     >
-      {isComingSoon && (
-        <span className="absolute right-4 top-4 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
-          Coming Soon
-        </span>
-      )}
-
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--payaptic-primary)] text-white">
-        <Icon className="h-6 w-6" />
+      <div className="mb-4 flex items-start justify-between">
+        <div
+          className={`flex h-12 w-12 items-center justify-center rounded-xl ${
+            isActive
+              ? "bg-payaptic-emerald/10 text-payaptic-emerald"
+              : "bg-gray-100 text-gray-400"
+          }`}
+        >
+          <Icon className="h-6 w-6" />
+        </div>
+        {isActive ? (
+          <span className="rounded-full bg-payaptic-emerald/10 px-3 py-1 text-xs font-medium text-payaptic-emerald">
+            Active
+          </span>
+        ) : (
+          <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500">
+            Coming Soon
+          </span>
+        )}
       </div>
 
-      <h3 className="mb-2 text-lg font-semibold text-[var(--payaptic-text)]">
+      <h3 className="mb-2 text-xl font-bold text-payaptic-navy">
         {tool.name}
       </h3>
 
-      <p className="mb-4 flex-1 text-sm text-[var(--payaptic-text-muted)]">
+      <p className="flex-1 text-sm leading-relaxed text-gray-500">
         {tool.description}
       </p>
+    </div>
+  );
 
-      {!isComingSoon && (
-        <div className="flex items-center gap-1 text-sm font-medium text-[var(--payaptic-primary)] group-hover:text-[var(--payaptic-primary-light)]">
-          Open Tool
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-        </div>
-      )}
+  if (!isActive) return card;
+
+  return (
+    <Link href={tool.route} className="block">
+      {card}
     </Link>
   );
 }

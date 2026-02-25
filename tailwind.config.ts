@@ -13,14 +13,12 @@ const config: Config = {
         mono: ["var(--font-roboto-mono)", "Roboto Mono", "monospace"],
       },
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
         payaptic: {
           navy: "#002C4F",
-          primary: "var(--payaptic-primary)",
-          "primary-light": "var(--payaptic-primary-light)",
-          accent: "var(--payaptic-accent)",
-          "accent-light": "var(--payaptic-accent-light)",
+          emerald: "#12C472",
+          ocean: "#0076A8",
+          sky: "#00A6FF",
+          lime: "#A3FFD4",
         },
       },
     },

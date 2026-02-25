@@ -2,24 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* Payaptic brand tokens */
-  --payaptic-navy: #002C4F;
-  --payaptic-primary: #1e3a5f;
-  --payaptic-primary-light: #2d5a8e;
-  --payaptic-accent: #f59e0b;
-  --payaptic-accent-light: #fbbf24;
-  --payaptic-bg: #f8fafc;
-  --payaptic-surface: #ffffff;
-  --payaptic-text: #0f172a;
-  --payaptic-text-muted: #64748b;
-  --payaptic-border: #e2e8f0;
-  --payaptic-sidebar-bg: #1e3a5f;
-  --payaptic-sidebar-text: #e2e8f0;
-  --payaptic-sidebar-hover: #2d5a8e;
-}
-
 body {
-  color: var(--payaptic-text);
-  background: var(--payaptic-bg);
+  color: #0f172a;
+  background: #f9fafb;
 }
