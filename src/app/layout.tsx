@@ -3,14 +3,15 @@ import { ClerkProvider } from "@clerk/nextjs";
 import localFont from "next/font/local";
 import "./globals.css";
 
-const geistSans = localFont({
+const inter = localFont({
   src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
+  variable: "--font-inter",
   weight: "100 900",
 });
-const geistMono = localFont({
+
+const robotoMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
+  variable: "--font-roboto-mono",
   weight: "100 900",
 });
 
@@ -29,7 +30,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          className={`${inter.variable} ${robotoMono.variable} font-sans antialiased`}
         >
           {children}
         </body>

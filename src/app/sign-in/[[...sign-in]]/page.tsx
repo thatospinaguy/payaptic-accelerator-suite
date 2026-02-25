@@ -2,22 +2,22 @@ import { SignIn } from "@clerk/nextjs";
 
 export default function SignInPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--payaptic-bg)]">
-      <div className="flex flex-col items-center gap-6">
-        <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--payaptic-primary)] font-bold text-white">
-            PA
-          </div>
-          <div className="flex flex-col leading-tight">
-            <span className="text-lg font-bold text-[var(--payaptic-text)]">
-              Payaptic
-            </span>
-            <span className="text-xs text-[var(--payaptic-text-muted)]">
-              Oracle Accelerator Suite
-            </span>
-          </div>
+    <div className="flex min-h-screen items-center justify-center bg-payaptic-navy">
+      <div className="flex flex-col items-center">
+        {/* Payaptic branding */}
+        <div className="mb-6 flex flex-col items-center">
+          <h1 className="text-[32px] font-bold leading-tight text-white">
+            payaptic
+          </h1>
+          <p className="mt-1 text-[16px] font-normal text-white/70">
+            Oracle Accelerator Suite
+          </p>
         </div>
-        <SignIn />
+
+        {/* Clerk sign-in card */}
+        <div className="overflow-hidden rounded-xl shadow-lg">
+          <SignIn />
+        </div>
       </div>
     </div>
   );

@@ -8,10 +8,15 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-inter)", "Inter", "sans-serif"],
+        mono: ["var(--font-roboto-mono)", "Roboto Mono", "monospace"],
+      },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
         payaptic: {
+          navy: "#002C4F",
           primary: "var(--payaptic-primary)",
           "primary-light": "var(--payaptic-primary-light)",
           accent: "var(--payaptic-accent)",
