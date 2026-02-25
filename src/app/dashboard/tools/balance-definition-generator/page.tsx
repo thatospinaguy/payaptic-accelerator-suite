@@ -12,9 +12,16 @@ export default function BalanceDefinitionGeneratorPage() {
         <ArrowLeft className="h-4 w-4" />
         Back to Dashboard
       </Link>
-      <h1 className="mb-6 text-2xl font-bold text-payaptic-navy">
-        Payroll Balance Definition Generator
-      </h1>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-payaptic-navy">
+          Payroll Balance Definition Generator
+        </h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Generate Oracle HCM HDL BalanceFeed .dat files for payroll balance
+          definitions
+        </p>
+      </div>
+
       <BalanceDefinitionGenerator />
     </div>
   );
