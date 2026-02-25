@@ -12,9 +12,16 @@ export default function FastFormulaUploadPage() {
         <ArrowLeft className="h-4 w-4" />
         Back to Dashboard
       </Link>
-      <h1 className="mb-6 text-2xl font-bold text-payaptic-navy">
-        Fast Formula Bulk Upload
-      </h1>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-payaptic-navy">
+          Fast Formula Bulk Upload
+        </h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Package Oracle HCM Fast Formula files for bulk upload via Data
+          Exchange
+        </p>
+      </div>
+
       <FastFormulaUpload />
     </div>
   );
