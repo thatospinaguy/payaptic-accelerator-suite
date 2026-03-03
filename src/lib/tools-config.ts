@@ -30,6 +30,16 @@ export const tools = [
     route: "/dashboard/tools/element-group-loader",
   },
   {
+    name: "Calculation Value Definition Loader",
+    slug: "calc-value-def-loader",
+    description:
+      "Generate dual-structure HDL files for Oracle HCM Calculation Value Definitions with automatic ValueDefinition and RangeItem pairing.",
+    icon: "Calculator" as const,
+    status: "active" as const,
+    category: "Payroll",
+    route: "/dashboard/tools/calc-value-def-loader",
+  },
+  {
     name: "Costing Load Generator",
     slug: "costing-load-generator",
     description:
