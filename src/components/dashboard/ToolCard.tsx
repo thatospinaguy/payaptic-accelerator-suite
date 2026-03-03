@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { FileUp, Scale, Calculator } from "lucide-react";
+import { FileUp, Scale, Calculator, FolderTree } from "lucide-react";
 import type { Tool } from "@/lib/tools-config";
 
 const iconMap = {
   FileUp,
   Scale,
   Calculator,
+  FolderTree,
 } as const;
 
 export default function ToolCard({ tool }: { tool: Tool }) {

@@ -20,6 +20,16 @@ export const tools = [
     route: "/dashboard/tools/balance-definition-generator",
   },
   {
+    name: "Element Group Loader",
+    slug: "element-group-loader",
+    description:
+      "Generate HDL files to assign payroll elements to element groups in Oracle HCM.",
+    icon: "FolderTree" as const,
+    status: "active" as const,
+    category: "Payroll",
+    route: "/dashboard/tools/element-group-loader",
+  },
+  {
     name: "Costing Load Generator",
     slug: "costing-load-generator",
     description:
