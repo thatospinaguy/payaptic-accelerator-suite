@@ -55,7 +55,7 @@ export default function ElementGroupLoader() {
   }
 
   function loadSampleData() {
-    setLegislativeDataGroupName('Chartwell CA LDG');
+    setLegislativeDataGroupName('Acme CA LDG');
     setRows([...DEMO_ROWS]);
   }
 
