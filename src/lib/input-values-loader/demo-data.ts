@@ -2,7 +2,7 @@ import { InputValueRow } from './types';
 
 export const DEMO_ROWS: InputValueRow[] = [
   {
-    legislativeDataGroupName: 'Chartwell CA LDG',
+    legislativeDataGroupName: 'Acme CA LDG',
     elementCode: 'TL Call back pay 1_0 Result',
     inputValueCode: 'CRR Costing Default',
     name: 'CRR Costing Default',
@@ -17,7 +17,7 @@ export const DEMO_ROWS: InputValueRow[] = [
     defaultValue: '00',
     applyDefaultAtRuntimeFlag: 'Y',
     lookupType: '',
-    referenceCode: 'COSTING_Chartwell_Job',
+    referenceCode: 'COSTING_Acme_Job',
     minimumValue: '',
     maximumValue: '',
     valueSet: '',
@@ -27,7 +27,7 @@ export const DEMO_ROWS: InputValueRow[] = [
     rateFormulaCode: '',
   },
   {
-    legislativeDataGroupName: 'Chartwell CA LDG',
+    legislativeDataGroupName: 'Acme CA LDG',
     elementCode: 'TL Call back pay 1_5 Canadian Calculation',
     inputValueCode: 'Straight',
     name: 'Straight',
@@ -52,7 +52,7 @@ export const DEMO_ROWS: InputValueRow[] = [
     rateFormulaCode: '',
   },
   {
-    legislativeDataGroupName: 'Chartwell CA LDG',
+    legislativeDataGroupName: 'Acme CA LDG',
     elementCode: 'TL Call back pay 1_5 Canadian Calculation',
     inputValueCode: 'Premium',
     name: 'Premium',
