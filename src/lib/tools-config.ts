@@ -70,6 +70,16 @@ export const tools = [
     route: "/dashboard/tools/input-values-loader",
   },
   {
+    name: "Element Eligibility & Costing Loader",
+    slug: "element-eligibility-costing-loader",
+    description:
+      "Generate multi-file HDL packages for Oracle HCM element eligibility records and GL costing allocations.",
+    icon: "ShieldCheck" as const,
+    status: "active" as const,
+    category: "Payroll",
+    route: "/dashboard/tools/element-eligibility-costing-loader",
+  },
+  {
     name: "Costing Load Generator",
     slug: "costing-load-generator",
     description:
