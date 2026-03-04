@@ -20,12 +20,6 @@ interface FileUploadZoneProps {
   effectiveEndDate: string;
 }
 
-// Status columns to skip from MC050
-const STATUS_COLUMNS = new Set([
-  'pilot', 'ready', 'dev4', 'sit', 'uat', 'prod', 'status',
-  'notes', 'comments', 'comment',
-]);
-
 function findHeaderRow(sheet: XLSX.WorkSheet, keywords: string[]): number {
   const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
   for (let r = range.s.r; r <= Math.min(range.e.r, 20); r++) {
