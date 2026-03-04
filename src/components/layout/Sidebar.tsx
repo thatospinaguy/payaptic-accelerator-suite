@@ -12,6 +12,7 @@ import {
   FileText,
   TextCursorInput,
   ShieldCheck,
+  Code,
   X,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
@@ -27,6 +28,7 @@ const iconMap = {
   FileText,
   TextCursorInput,
   ShieldCheck,
+  Code,
 } as const;
 
 export default function Sidebar() {
