@@ -80,6 +80,16 @@ export const tools = [
     route: "/dashboard/tools/element-eligibility-costing-loader",
   },
   {
+    name: "Fast Formula Code Formatter",
+    slug: "fast-formula-formatter",
+    description:
+      "Clean up and format Oracle Fast Formula code with proper indentation, consistent headers, and professional code style.",
+    icon: "Code" as const,
+    status: "active" as const,
+    category: "Payroll",
+    route: "/dashboard/tools/fast-formula-formatter",
+  },
+  {
     name: "Costing Load Generator",
     slug: "costing-load-generator",
     description:

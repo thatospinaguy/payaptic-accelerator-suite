@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FileUp, Scale, Calculator, FolderTree, Languages, FileText, TextCursorInput, ShieldCheck } from "lucide-react";
+import { FileUp, Scale, Calculator, FolderTree, Languages, FileText, TextCursorInput, ShieldCheck, Code } from "lucide-react";
 import type { Tool } from "@/lib/tools-config";
 
 const iconMap = {
@@ -13,6 +13,7 @@ const iconMap = {
   FileText,
   TextCursorInput,
   ShieldCheck,
+  Code,
 } as const;
 
 export default function ToolCard({ tool }: { tool: Tool }) {
