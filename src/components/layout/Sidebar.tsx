@@ -8,6 +8,7 @@ import {
   Scale,
   Calculator,
   FolderTree,
+  Languages,
   X,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
@@ -19,6 +20,7 @@ const iconMap = {
   Scale,
   Calculator,
   FolderTree,
+  Languages,
 } as const;
 
 export default function Sidebar() {

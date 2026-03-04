@@ -40,6 +40,16 @@ export const tools = [
     route: "/dashboard/tools/calc-value-def-loader",
   },
   {
+    name: "Balance Reporting Names Loader",
+    slug: "balance-reporting-names-loader",
+    description:
+      "Generate HDL files for Oracle HCM balance reporting name translations with automatic language code mapping.",
+    icon: "Languages" as const,
+    status: "active" as const,
+    category: "Payroll",
+    route: "/dashboard/tools/balance-reporting-names-loader",
+  },
+  {
     name: "Costing Load Generator",
     slug: "costing-load-generator",
     description:
