@@ -51,7 +51,7 @@ export default function CodeInputPanel({
   );
 
   const handlePaste = useCallback(
-    (_e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    () => {
       if (formatOnPaste) {
         // Let the paste happen, then trigger format on next tick
         setTimeout(() => onFormat(), 0);
