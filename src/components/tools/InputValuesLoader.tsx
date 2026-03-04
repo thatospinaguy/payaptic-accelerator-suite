@@ -68,7 +68,7 @@ export default function InputValuesLoader() {
   }
 
   function loadSampleData() {
-    setLegislativeDataGroupName('Chartwell CA LDG');
+    setLegislativeDataGroupName('Acme CA LDG');
     setEffectiveStartDate('1951/01/01');
     setRows([...DEMO_ROWS]);
   }

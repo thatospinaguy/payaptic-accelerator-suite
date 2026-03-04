@@ -32,7 +32,7 @@ export default function SessionDefaultsPanel({
             value={legislativeDataGroupName}
             onChange={(e) => setLegislativeDataGroupName(e.target.value)}
             className={`input-field w-full ${!legislativeDataGroupName.trim() ? 'border-amber-300' : ''}`}
-            placeholder="e.g. Chartwell CA LDG"
+            placeholder="e.g. Acme CA LDG"
           />
           {!legislativeDataGroupName.trim() && (
             <p className="text-xs text-amber-600 mt-1">
