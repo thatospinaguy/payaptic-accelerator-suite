@@ -2,7 +2,7 @@ import { ElementReportingNameRow } from './types';
 
 export const DEMO_ROWS: ElementReportingNameRow[] = [
   {
-    legislativeDataGroupName: 'Chartwell CA LDG',
+    legislativeDataGroupName: 'Acme CA LDG',
     language: 'US',
     elementCode: 'TL Call back pay 1_0 Canadian Calculation',
     elementName: 'TL Call back pay 1_0 Canadian Calculation',
@@ -10,7 +10,7 @@ export const DEMO_ROWS: ElementReportingNameRow[] = [
     description: 'Call back pay 1_0',
   },
   {
-    legislativeDataGroupName: 'Chartwell CA LDG',
+    legislativeDataGroupName: 'Acme CA LDG',
     language: 'FRC',
     elementCode: 'TL Call back pay 1_0 Canadian Calculation',
     elementName: 'TL Call back pay 1_0 Canadian Calculation',
@@ -18,7 +18,7 @@ export const DEMO_ROWS: ElementReportingNameRow[] = [
     description: 'rappel au travail au taux horaire régulier',
   },
   {
-    legislativeDataGroupName: 'Chartwell CA LDG',
+    legislativeDataGroupName: 'Acme CA LDG',
     language: 'US',
     elementCode: 'TL Call back pay 1_0 Result',
     elementName: 'TL Call back pay 1_0 Results',
@@ -26,7 +26,7 @@ export const DEMO_ROWS: ElementReportingNameRow[] = [
     description: 'Call back pay 1_0',
   },
   {
-    legislativeDataGroupName: 'Chartwell CA LDG',
+    legislativeDataGroupName: 'Acme CA LDG',
     language: 'FRC',
     elementCode: 'TL Call back pay 1_0 Result',
     elementName: 'TL Call back pay 1_0 Results',
