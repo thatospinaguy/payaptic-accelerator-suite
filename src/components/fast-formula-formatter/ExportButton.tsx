@@ -16,7 +16,7 @@ export default function ExportButton({ files }: ExportButtonProps) {
     const allFormatted = files.map((f) => f.formattedCode).join('\n\n');
     await navigator.clipboard.writeText(allFormatted);
     setCopySuccess(true);
-    setTimeout(() => setCopySuccess(false), 2000);
+    setTimeout(() => setCopySuccess(false), 3000);
   }
 
   function handleDownloadTxt() {

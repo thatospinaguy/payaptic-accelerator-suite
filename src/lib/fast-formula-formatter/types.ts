@@ -11,6 +11,8 @@ export interface FormatterConfig {
   addHeaderBlock: boolean;
   headerAuthor: string;
   headerDescription: string;
+  formatOnPaste: boolean;
+  darkTheme: boolean;
 }
 
 export interface Warning {

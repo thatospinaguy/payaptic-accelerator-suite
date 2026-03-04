@@ -8,6 +8,42 @@ interface FormatterConfigPanelProps {
   onReformat?: () => void;
 }
 
+function ToggleButton({
+  label,
+  enabled,
+  onLabel,
+  offLabel,
+  onToggle,
+  ariaLabel,
+}: {
+  label: string;
+  enabled: boolean;
+  onLabel: string;
+  offLabel: string;
+  onToggle: () => void;
+  ariaLabel: string;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-sm font-medium text-gray-700">
+        {label}
+      </label>
+      <button
+        onClick={onToggle}
+        aria-label={ariaLabel}
+        aria-pressed={enabled}
+        className={`flex h-[38px] w-full items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
+          enabled
+            ? 'border-payaptic-emerald bg-payaptic-emerald/10 text-payaptic-emerald'
+            : 'border-gray-300 bg-white text-gray-500'
+        }`}
+      >
+        {enabled ? onLabel : offLabel}
+      </button>
+    </div>
+  );
+}
+
 export default function FormatterConfigPanel({
   config,
   setConfig,
@@ -40,6 +76,7 @@ export default function FormatterConfigPanel({
             value={config.indentSize}
             onChange={(e) => update({ indentSize: Number(e.target.value) })}
             className="input-field w-full"
+            aria-label="Indent size in spaces"
           >
             <option value={2}>2</option>
             <option value={4}>4</option>
@@ -48,39 +85,23 @@ export default function FormatterConfigPanel({
           </select>
         </div>
 
-        {/* Uppercase keywords */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Uppercase Keywords
-          </label>
-          <button
-            onClick={() => update({ uppercaseKeywords: !config.uppercaseKeywords })}
-            className={`flex h-[38px] w-full items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
-              config.uppercaseKeywords
-                ? 'border-payaptic-emerald bg-payaptic-emerald/10 text-payaptic-emerald'
-                : 'border-gray-300 bg-white text-gray-500'
-            }`}
-          >
-            {config.uppercaseKeywords ? 'ON — IF, THEN, ELSE' : 'OFF — if, then, else'}
-          </button>
-        </div>
+        <ToggleButton
+          label="Uppercase Keywords"
+          enabled={config.uppercaseKeywords}
+          onLabel="ON — IF, THEN, ELSE"
+          offLabel="OFF — if, then, else"
+          onToggle={() => update({ uppercaseKeywords: !config.uppercaseKeywords })}
+          ariaLabel="Toggle uppercase keywords"
+        />
 
-        {/* Header block */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
-            Add Header Block
-          </label>
-          <button
-            onClick={() => update({ addHeaderBlock: !config.addHeaderBlock })}
-            className={`flex h-[38px] w-full items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
-              config.addHeaderBlock
-                ? 'border-payaptic-emerald bg-payaptic-emerald/10 text-payaptic-emerald'
-                : 'border-gray-300 bg-white text-gray-500'
-            }`}
-          >
-            {config.addHeaderBlock ? 'ON — Prepend if missing' : 'OFF — No header'}
-          </button>
-        </div>
+        <ToggleButton
+          label="Add Header Block"
+          enabled={config.addHeaderBlock}
+          onLabel="ON — Prepend if missing"
+          offLabel="OFF — No header"
+          onToggle={() => update({ addHeaderBlock: !config.addHeaderBlock })}
+          ariaLabel="Toggle header block prepending"
+        />
 
         {/* Author name */}
         <div>
@@ -93,8 +114,30 @@ export default function FormatterConfigPanel({
             onChange={(e) => update({ headerAuthor: e.target.value })}
             placeholder="Your name"
             className="input-field w-full"
+            aria-label="Author name for header block"
           />
         </div>
+      </div>
+
+      {/* Second row: extra options */}
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <ToggleButton
+          label="Format on Paste"
+          enabled={config.formatOnPaste}
+          onLabel="ON — Auto-format"
+          offLabel="OFF — Manual only"
+          onToggle={() => update({ formatOnPaste: !config.formatOnPaste })}
+          ariaLabel="Toggle auto-format on paste"
+        />
+
+        <ToggleButton
+          label="Dark Code Theme"
+          enabled={config.darkTheme}
+          onLabel="ON — Dark editor"
+          offLabel="OFF — Light editor"
+          onToggle={() => update({ darkTheme: !config.darkTheme })}
+          ariaLabel="Toggle dark code theme"
+        />
       </div>
     </div>
   );

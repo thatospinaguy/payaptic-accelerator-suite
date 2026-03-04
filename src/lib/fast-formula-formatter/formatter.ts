@@ -16,6 +16,12 @@ const TYPE_KEYWORDS = [
 const FUNCTION_KEYWORDS = [
   'CALL_FORMULA', 'CHANGE_CONTEXTS', 'CALC_DIR_EXISTS', 'CALC_DIR_TEXT_VALUE',
   'GET_CONTEXT', 'PAY_INTERNAL_LOG_WRITE', 'TO_CHAR', 'TO_DATE', 'ROUNDUP',
+  // Common Oracle functions
+  'SUBSTR', 'INSTR', 'UPPER', 'LOWER', 'LPAD', 'RPAD', 'ROUND', 'TRUNC',
+  'ABS', 'MOD', 'SIGN', 'CEIL', 'FLOOR', 'SQRT', 'POWER', 'DECODE', 'NVL',
+  'LENGTH', 'REPLACE', 'TRIM', 'LTRIM', 'RTRIM', 'GREATEST', 'LEAST',
+  'TO_NUMBER', 'MONTHS_BETWEEN', 'ADD_MONTHS', 'LAST_DAY', 'NEXT_DAY',
+  'SYSDATE', 'CONCAT',
 ];
 
 const ALL_KEYWORDS = new Set([
@@ -26,37 +32,36 @@ const ALL_KEYWORDS = new Set([
   ...FUNCTION_KEYWORDS,
 ]);
 
-// ─── Token types ─────────────────────────────────────────────────────────────
-type TokenType =
-  | 'COMMENT'
-  | 'STRING'
-  | 'KEYWORD'
-  | 'IDENTIFIER'
-  | 'OPERATOR'
-  | 'PAREN_OPEN'
-  | 'PAREN_CLOSE'
-  | 'COMMA'
-  | 'NEWLINE'
-  | 'WHITESPACE'
-  | 'OTHER';
-
-interface Token {
-  type: TokenType;
-  value: string;
-  original: string; // preserve original casing
+// ─── Escaped quote-aware string skipper ──────────────────────────────────────
+// Oracle FF uses '' to escape a single quote inside a string literal.
+// e.g. 'O''Reilly' is the string O'Reilly.
+function skipString(str: string, start: number): number {
+  // start is the index of the opening quote
+  let i = start + 1;
+  while (i < str.length) {
+    if (str[i] === "'") {
+      // Check for escaped quote ''
+      if (i + 1 < str.length && str[i + 1] === "'") {
+        i += 2; // skip both quotes
+        continue;
+      }
+      return i + 1; // past closing quote
+    }
+    i++;
+  }
+  return i; // unclosed string — return end of input
 }
 
-// ─── Tokenizer ───────────────────────────────────────────────────────────────
-function tokenize(code: string): { tokens: Token[]; warnings: Warning[] } {
-  const tokens: Token[] = [];
+// ─── Warning-only scanner (replaces full tokenizer) ──────────────────────────
+function scanForWarnings(code: string): Warning[] {
   const warnings: Warning[] = [];
   let i = 0;
   let lineNum = 1;
 
   while (i < code.length) {
-    // Block comment /* ... */
+    // Block comment
     if (code[i] === '/' && code[i + 1] === '*') {
-      const start = i;
+      const startLine = lineNum;
       i += 2;
       while (i < code.length && !(code[i] === '*' && code[i + 1] === '/')) {
         if (code[i] === '\n') lineNum++;
@@ -66,134 +71,38 @@ function tokenize(code: string): { tokens: Token[]; warnings: Warning[] } {
         warnings.push({
           rowIndex: -1,
           id: 'UNCLOSED_COMMENT',
-          message: `Unclosed block comment detected starting near line ${lineNum}.`,
+          message: `Unclosed block comment detected starting near line ${startLine}.`,
         });
-        tokens.push({ type: 'COMMENT', value: code.slice(start), original: code.slice(start) });
       } else {
-        i += 2; // skip */
-        tokens.push({ type: 'COMMENT', value: code.slice(start, i), original: code.slice(start, i) });
+        i += 2;
       }
       continue;
     }
 
-    // String literal 'single quotes'
+    // String literal (with escaped quote support)
     if (code[i] === "'") {
-      const start = i;
       const startLine = lineNum;
-      i++;
-      while (i < code.length && code[i] !== "'") {
-        if (code[i] === '\n') lineNum++;
-        i++;
+      const end = skipString(code, i);
+      // Count newlines within string
+      for (let j = i; j < end && j < code.length; j++) {
+        if (code[j] === '\n') lineNum++;
       }
-      if (i >= code.length) {
+      if (end > code.length || (code[end - 1] !== "'")) {
         warnings.push({
           rowIndex: -1,
           id: 'UNCLOSED_STRING',
           message: `Unclosed string literal detected near line ${startLine}.`,
         });
-        tokens.push({ type: 'STRING', value: code.slice(start), original: code.slice(start) });
-      } else {
-        i++; // skip closing quote
-        tokens.push({ type: 'STRING', value: code.slice(start, i), original: code.slice(start, i) });
       }
+      i = end;
       continue;
     }
 
-    // Newline
-    if (code[i] === '\n') {
-      tokens.push({ type: 'NEWLINE', value: '\n', original: '\n' });
-      lineNum++;
-      i++;
-      continue;
-    }
-
-    // Whitespace (not newline)
-    if (/[ \t\r]/.test(code[i])) {
-      const start = i;
-      while (i < code.length && /[ \t\r]/.test(code[i])) i++;
-      tokens.push({ type: 'WHITESPACE', value: code.slice(start, i), original: code.slice(start, i) });
-      continue;
-    }
-
-    // Parentheses
-    if (code[i] === '(') {
-      tokens.push({ type: 'PAREN_OPEN', value: '(', original: '(' });
-      i++;
-      continue;
-    }
-    if (code[i] === ')') {
-      tokens.push({ type: 'PAREN_CLOSE', value: ')', original: ')' });
-      i++;
-      continue;
-    }
-
-    // Comma
-    if (code[i] === ',') {
-      tokens.push({ type: 'COMMA', value: ',', original: ',' });
-      i++;
-      continue;
-    }
-
-    // Operators: ||, >=, <=, <>, =, <, >, +, -, *, /
-    if (code[i] === '|' && code[i + 1] === '|') {
-      tokens.push({ type: 'OPERATOR', value: '||', original: '||' });
-      i += 2;
-      continue;
-    }
-    if (code[i] === '>' && code[i + 1] === '=') {
-      tokens.push({ type: 'OPERATOR', value: '>=', original: '>=' });
-      i += 2;
-      continue;
-    }
-    if (code[i] === '<' && code[i + 1] === '>') {
-      tokens.push({ type: 'OPERATOR', value: '<>', original: '<>' });
-      i += 2;
-      continue;
-    }
-    if (code[i] === '<' && code[i + 1] === '=') {
-      tokens.push({ type: 'OPERATOR', value: '<=', original: '<=' });
-      i += 2;
-      continue;
-    }
-    if ('=<>'.includes(code[i])) {
-      tokens.push({ type: 'OPERATOR', value: code[i], original: code[i] });
-      i++;
-      continue;
-    }
-    if ('+-*/'.includes(code[i]) && !(code[i] === '/' && code[i + 1] === '*')) {
-      tokens.push({ type: 'OPERATOR', value: code[i], original: code[i] });
-      i++;
-      continue;
-    }
-
-    // Word (identifier or keyword)
-    if (/[a-zA-Z_$]/.test(code[i])) {
-      const start = i;
-      while (i < code.length && /[a-zA-Z0-9_$]/.test(code[i])) i++;
-      const word = code.slice(start, i);
-      const upper = word.toUpperCase();
-      if (ALL_KEYWORDS.has(upper)) {
-        tokens.push({ type: 'KEYWORD', value: upper, original: word });
-      } else {
-        tokens.push({ type: 'IDENTIFIER', value: word, original: word });
-      }
-      continue;
-    }
-
-    // Number
-    if (/[0-9]/.test(code[i])) {
-      const start = i;
-      while (i < code.length && /[0-9.]/.test(code[i])) i++;
-      tokens.push({ type: 'OTHER', value: code.slice(start, i), original: code.slice(start, i) });
-      continue;
-    }
-
-    // Anything else
-    tokens.push({ type: 'OTHER', value: code[i], original: code[i] });
+    if (code[i] === '\n') lineNum++;
     i++;
   }
 
-  return { tokens, warnings };
+  return warnings;
 }
 
 // ─── Header detection ────────────────────────────────────────────────────────
@@ -206,19 +115,16 @@ function hasExistingHeader(code: string): boolean {
 }
 
 function extractHeaderBlock(code: string): { header: string; body: string } {
-  // Find all leading block comments (possibly separated by whitespace/newlines)
   let i = 0;
   let lastCommentEnd = 0;
 
   while (i < code.length) {
-    // Skip whitespace/newlines
     while (i < code.length && /[\s]/.test(code[i])) i++;
 
     if (code[i] === '/' && code[i + 1] === '*') {
-      // Found a comment block
       i += 2;
       while (i < code.length && !(code[i] === '*' && code[i + 1] === '/')) i++;
-      if (i < code.length) i += 2; // skip */
+      if (i < code.length) i += 2;
       lastCommentEnd = i;
     } else {
       break;
@@ -226,10 +132,7 @@ function extractHeaderBlock(code: string): { header: string; body: string } {
   }
 
   if (lastCommentEnd === 0) return { header: '', body: code };
-
-  const header = code.slice(0, lastCommentEnd);
-  const body = code.slice(lastCommentEnd);
-  return { header, body };
+  return { header: code.slice(0, lastCommentEnd), body: code.slice(lastCommentEnd) };
 }
 
 function generateHeaderBlock(
@@ -257,27 +160,22 @@ function generateHeaderBlock(
   );
 }
 
-// ─── Line-based formatter ────────────────────────────────────────────────────
-// We format by working on cleaned-up lines, applying indentation and keyword
-// uppercasing while preserving strings and comments.
+// ─── Line-based helpers ──────────────────────────────────────────────────────
 
 function uppercaseKeywordsInLine(line: string): string {
-  // Tokenize the line carefully, preserving strings and comments
   let result = '';
   let i = 0;
 
   while (i < line.length) {
-    // String literal
+    // String literal (skip with escaped quote support)
     if (line[i] === "'") {
-      const start = i;
-      i++;
-      while (i < line.length && line[i] !== "'") i++;
-      if (i < line.length) i++;
-      result += line.slice(start, i);
+      const end = skipString(line, i);
+      result += line.slice(i, end);
+      i = end;
       continue;
     }
 
-    // Block comment start (might be partial on this line)
+    // Block comment (skip)
     if (line[i] === '/' && line[i + 1] === '*') {
       const start = i;
       i += 2;
@@ -294,8 +192,7 @@ function uppercaseKeywordsInLine(line: string): string {
       const word = line.slice(start, i);
       const upper = word.toUpperCase();
 
-      // Don't uppercase l_ prefixed variables, or variables like LOG_EE_ID, l_anything, dummy, flsa_split_preference
-      if (/^l_/i.test(word) || /^dummy$/i.test(word) || /^flsa_split_preference$/i.test(word)) {
+      if (/^l_/i.test(word) || /^dummy$/i.test(word)) {
         result += word;
       } else if (ALL_KEYWORDS.has(upper)) {
         result += upper;
@@ -312,49 +209,14 @@ function uppercaseKeywordsInLine(line: string): string {
   return result;
 }
 
-function isInsideComment(lines: string[], lineIndex: number): boolean {
-  // Check if lineIndex is inside a multi-line block comment
-  let inComment = false;
-  for (let i = 0; i <= lineIndex; i++) {
-    const line = lines[i];
-    let j = 0;
-    while (j < line.length) {
-      if (inComment) {
-        if (line[j] === '*' && line[j + 1] === '/') {
-          inComment = false;
-          j += 2;
-          continue;
-        }
-        j++;
-      } else {
-        if (line[j] === "'" ) {
-          j++;
-          while (j < line.length && line[j] !== "'") j++;
-          if (j < line.length) j++;
-          continue;
-        }
-        if (line[j] === '/' && line[j + 1] === '*') {
-          inComment = true;
-          j += 2;
-          continue;
-        }
-        j++;
-      }
-    }
-  }
-  return inComment;
-}
-
 function getStrippedContent(line: string): string {
-  // Return line content with strings replaced by placeholders (for keyword detection)
   let result = '';
   let i = 0;
   while (i < line.length) {
     if (line[i] === "'") {
       result += "'___'";
-      i++;
-      while (i < line.length && line[i] !== "'") i++;
-      if (i < line.length) i++;
+      const end = skipString(line, i);
+      i = end;
       continue;
     }
     result += line[i];
@@ -394,6 +256,7 @@ function countChar(str: string, ch: string): number {
       continue;
     }
     if (inStr) {
+      if (str[i] === "'" && str[i + 1] === "'") { i++; continue; } // escaped quote
       if (str[i] === "'") inStr = false;
       continue;
     }
@@ -405,7 +268,6 @@ function countChar(str: string, ch: string): number {
 }
 
 function formatCallFormula(lines: string[], startIdx: number, indentSize: number, baseIndent: number): { formatted: string[]; consumed: number } {
-  // Collect all lines that make up this CALL_FORMULA block
   let parenDepth = 0;
   let collected = '';
   let consumed = 0;
@@ -417,27 +279,22 @@ function formatCallFormula(lines: string[], startIdx: number, indentSize: number
     if (parenDepth <= 0) break;
   }
 
-  // Parse the CALL_FORMULA call
-  // Pattern: [prefix]CALL_FORMULA('name', param1, param2, ...)
   const match = collected.match(/^(.*?)CALL_FORMULA\s*\(\s*(.+)$/i);
   if (!match) return { formatted: [collected], consumed };
 
-  const prefix = match[1]; // e.g., empty, or "l_dummy = "
+  const prefix = match[1];
   const rest = match[2];
 
-  // Remove trailing )
   const lastParen = rest.lastIndexOf(')');
   if (lastParen === -1) return { formatted: [collected], consumed };
   const paramsStr = rest.slice(0, lastParen);
 
-  // Split by commas, but respect parentheses and strings
   const params = splitByComma(paramsStr);
   if (params.length === 0) return { formatted: [collected], consumed };
 
   const indent = ' '.repeat(baseIndent * indentSize);
   const paramIndent = indent + ' '.repeat(indentSize);
 
-  // If it's a short, inline call (e.g., 3 or fewer params, all short), keep on one line
   if (params.length <= 2 && collected.length < 120) {
     return { formatted: [indent + collected.trim()], consumed };
   }
@@ -457,7 +314,6 @@ function formatCallFormula(lines: string[], startIdx: number, indentSize: number
     result.push(paramIndent + ',' + param + (isLast ? ')' : ''));
   }
 
-  // If the last line doesn't end with ), add it
   const lastLine = result[result.length - 1];
   if (!lastLine.trimEnd().endsWith(')')) {
     result[result.length - 1] = lastLine + ')';
@@ -475,14 +331,11 @@ function splitByComma(str: string): string[] {
   for (let i = 0; i < str.length; i++) {
     if (inStr) {
       current += str[i];
+      if (str[i] === "'" && str[i + 1] === "'") { current += str[i + 1]; i++; continue; } // escaped
       if (str[i] === "'") inStr = false;
       continue;
     }
-    if (str[i] === "'") {
-      inStr = true;
-      current += str[i];
-      continue;
-    }
+    if (str[i] === "'") { inStr = true; current += str[i]; continue; }
     if (str[i] === '(') { depth++; current += str[i]; continue; }
     if (str[i] === ')') { depth--; current += str[i]; continue; }
     if (str[i] === ',' && depth === 0) {
@@ -496,15 +349,75 @@ function splitByComma(str: string): string[] {
   return parts;
 }
 
+// ─── Statistics ──────────────────────────────────────────────────────────────
+export interface FormatStats {
+  originalLines: number;
+  formattedLines: number;
+  keywordsUppercased: number;
+  maxIndentDepth: number;
+  blankLinesNormalized: number;
+  headerAction: 'preserved' | 'added' | 'none';
+}
+
+function computeStats(
+  original: string,
+  formatted: string,
+  config: FormatterConfig,
+  hadHeader: boolean,
+  addedHeader: boolean
+): FormatStats {
+  const origLines = original.split('\n');
+  const fmtLines = formatted.split('\n');
+
+  let keywordsUppercased = 0;
+  if (config.uppercaseKeywords) {
+    // Count keywords that were lowercased in original but uppercased in formatted
+    const origOutside = original.replace(/'[^']*'/g, "''").replace(/\/\*[\s\S]*?\*\//g, '');
+    ALL_KEYWORDS.forEach((kw) => {
+      const lower = kw.toLowerCase();
+      const regex = new RegExp(`\\b${lower}\\b`, 'g');
+      const matches = origOutside.match(regex);
+      if (matches) keywordsUppercased += matches.length;
+    });
+  }
+
+  let maxIndentDepth = 0;
+  for (const line of fmtLines) {
+    if (line.trim().length === 0) continue;
+    const leadingSpaces = line.match(/^( *)/)?.[1]?.length || 0;
+    const depth = config.indentSize > 0 ? Math.floor(leadingSpaces / config.indentSize) : 0;
+    if (depth > maxIndentDepth) maxIndentDepth = depth;
+  }
+
+  // Count blank lines difference
+  const origBlanks = origLines.filter((l) => l.trim() === '').length;
+  const fmtBlanks = fmtLines.filter((l) => l.trim() === '').length;
+
+  return {
+    originalLines: origLines.length,
+    formattedLines: fmtLines.length,
+    keywordsUppercased,
+    maxIndentDepth,
+    blankLinesNormalized: Math.abs(origBlanks - fmtBlanks),
+    headerAction: hadHeader ? 'preserved' : addedHeader ? 'added' : 'none',
+  };
+}
+
 // ─── Main format function ────────────────────────────────────────────────────
 export function formatFormula(
   code: string,
   config: FormatterConfig
-): { formatted: string; warnings: Warning[] } {
+): { formatted: string; warnings: Warning[]; stats: FormatStats } {
+  const emptyStats: FormatStats = {
+    originalLines: 0, formattedLines: 0, keywordsUppercased: 0,
+    maxIndentDepth: 0, blankLinesNormalized: 0, headerAction: 'none',
+  };
+
   if (!code.trim()) {
     return {
       formatted: '',
       warnings: [{ rowIndex: -1, id: 'EMPTY_INPUT', message: 'No formula code provided. Paste code or upload a file.' }],
+      stats: emptyStats,
     };
   }
 
@@ -521,9 +434,8 @@ export function formatFormula(
     });
   }
 
-  // Tokenize for unclosed comment/string warnings
-  const tokenResult = tokenize(code);
-  warnings.push(...tokenResult.warnings);
+  // Scan for unclosed comments/strings
+  warnings.push(...scanForWarnings(code));
 
   // Separate header from body
   const existingHeader = hasExistingHeader(code);
@@ -541,16 +453,14 @@ export function formatFormula(
   const formattedLines: string[] = [];
   let indent = 0;
   let inBlockComment = false;
-  let inInputsAre = false; // track INPUTS ARE continuation lines
+  let inInputsAre = false;
   let i = 0;
 
   while (i < rawLines.length) {
-    let line = rawLines[i];
+    const line = rawLines[i];
     const trimmed = line.trim();
 
-    // Skip empty lines but don't accumulate more than one blank line
     if (trimmed === '') {
-      // Add at most one blank line
       if (formattedLines.length > 0 && formattedLines[formattedLines.length - 1].trim() !== '') {
         formattedLines.push('');
       }
@@ -558,7 +468,6 @@ export function formatFormula(
       continue;
     }
 
-    // Handle block comments that span multiple lines
     if (inBlockComment) {
       formattedLines.push(' '.repeat(indent * config.indentSize) + trimmed);
       if (trimmed.includes('*/')) {
@@ -568,9 +477,7 @@ export function formatFormula(
       continue;
     }
 
-    // Block comment on this line
     if (trimmed.startsWith('/*')) {
-      // Check if comment closes on same line
       if (trimmed.includes('*/')) {
         formattedLines.push(' '.repeat(indent * config.indentSize) + trimmed);
       } else {
@@ -581,7 +488,6 @@ export function formatFormula(
       continue;
     }
 
-    // PAY_INTERNAL_LOG_WRITE — keep on single line
     if (isLogWriteLine(trimmed)) {
       const processed = config.uppercaseKeywords ? uppercaseKeywordsInLine(trimmed) : trimmed;
       formattedLines.push(' '.repeat(indent * config.indentSize) + processed);
@@ -589,7 +495,6 @@ export function formatFormula(
       continue;
     }
 
-    // RETURN statement — keep on single line
     if (isReturnStatement(trimmed)) {
       const processed = config.uppercaseKeywords ? uppercaseKeywordsInLine(trimmed) : trimmed;
       formattedLines.push(' '.repeat(indent * config.indentSize) + processed);
@@ -597,7 +502,7 @@ export function formatFormula(
       continue;
     }
 
-    // INPUTS ARE continuation lines — indent continuations
+    // INPUTS ARE continuation
     if (inInputsAre) {
       const processed = config.uppercaseKeywords ? uppercaseKeywordsInLine(trimmed) : trimmed;
       formattedLines.push(' '.repeat((indent + 1) * config.indentSize) + processed);
@@ -618,9 +523,8 @@ export function formatFormula(
       continue;
     }
 
-    // CALL_FORMULA handling
+    // CALL_FORMULA
     if (isCallFormulaStart(trimmed)) {
-      // Collect the full CALL_FORMULA block
       const remainingLines = rawLines.slice(i);
       const { formatted, consumed } = formatCallFormula(remainingLines, 0, config.indentSize, indent);
       for (const fl of formatted) {
@@ -631,16 +535,12 @@ export function formatFormula(
       continue;
     }
 
-    // CHANGE_CONTEXTS handling
+    // CHANGE_CONTEXTS
     if (isChangeContextsStart(trimmed) && !isLogWriteLine(trimmed)) {
       const processed = config.uppercaseKeywords ? uppercaseKeywordsInLine(trimmed) : trimmed;
       formattedLines.push(' '.repeat(indent * config.indentSize) + processed);
-
-      // Count parens on this line to see if we need to increase indent
       const opens = countChar(trimmed, '(');
       const closes = countChar(trimmed, ')');
-
-      // If more opens than closes, the block body is indented
       if (opens > closes) {
         indent += (opens - closes);
       }
@@ -648,17 +548,16 @@ export function formatFormula(
       continue;
     }
 
-    // Closing paren on its own line
-    if (trimmed === ')' || trimmed === ') )' || /^\)+$/.test(trimmed)) {
-      const parenCount = (trimmed.match(/\)/g) || []).length;
+    // Closing parens on their own
+    if (/^\)+$/.test(trimmed)) {
+      const parenCount = trimmed.length;
       indent = Math.max(0, indent - parenCount);
-      const processed = config.uppercaseKeywords ? uppercaseKeywordsInLine(trimmed) : trimmed;
-      formattedLines.push(' '.repeat(indent * config.indentSize) + processed);
+      formattedLines.push(' '.repeat(indent * config.indentSize) + trimmed);
       i++;
       continue;
     }
 
-    // Lines that start with ) and have more content like ) ELSE (
+    // Lines starting with )
     if (trimmed.startsWith(')')) {
       indent = Math.max(0, indent - 1);
     }
@@ -669,36 +568,29 @@ export function formatFormula(
       indent = Math.max(0, indent - 1);
     }
 
-    // Apply keyword uppercasing
     const processed = config.uppercaseKeywords ? uppercaseKeywordsInLine(trimmed) : trimmed;
     formattedLines.push(' '.repeat(indent * config.indentSize) + processed);
-
-    // Indent after IF (that doesn't have THEN on same line opening a paren block), ELSE, opening paren at end
-    const upperTrimmed = strippedForKeyword.toUpperCase();
 
     // If line ends with ( — indent next line
     if (trimmed.endsWith('(')) {
       indent++;
     }
-    // ELSE without ( on same line: do NOT bump indent here.
-    // The ( on the next line will handle it. This prevents double-indent
-    // when ELSE and ( are on separate lines.
 
     i++;
   }
 
   // Build the result
   let result = '';
+  let addedHeader = false;
 
   if (existingHeader) {
     result = headerPart.trim() + '\n\n';
   } else if (config.addHeaderBlock) {
-    // Try to extract formula name from the code
     const formulaName = extractFormulaName(code);
     result = generateHeaderBlock(formulaName, config) + '\n\n';
+    addedHeader = true;
   }
 
-  // Clean up: trim trailing whitespace, collapse multiple blank lines
   const cleaned = formattedLines
     .map((l) => l.trimEnd())
     .join('\n')
@@ -707,21 +599,110 @@ export function formatFormula(
 
   result += cleaned + '\n';
 
-  return { formatted: result, warnings };
+  const stats = computeStats(code, result, config, existingHeader, addedHeader);
+
+  return { formatted: result, warnings, stats };
 }
 
 function extractFormulaName(code: string): string {
-  // Try to find formula name from header comments
   const nameMatch = code.match(/Formula\s+Name\s*[:=]\s*(\S+)/i);
   if (nameMatch) return nameMatch[1];
-
-  // Try to find from ALIAS or DEFAULT patterns
   const aliasMatch = code.match(/ALIAS\s+\w+\s+AS\s+'([^']+)'/i);
   if (aliasMatch) return aliasMatch[1];
-
   return 'FORMULA_NAME';
 }
 
 export function extractFormulaNameFromCode(code: string): string {
   return extractFormulaName(code);
+}
+
+// ─── Simple line diff ────────────────────────────────────────────────────────
+export type DiffLineType = 'same' | 'added' | 'removed' | 'modified';
+
+export interface DiffLine {
+  type: DiffLineType;
+  leftNum?: number;
+  rightNum?: number;
+  leftText?: string;
+  rightText?: string;
+}
+
+export function computeDiff(original: string, formatted: string): DiffLine[] {
+  const origLines = original.split('\n');
+  const fmtLines = formatted.split('\n');
+  const result: DiffLine[] = [];
+
+  // Simple LCS-based diff
+  const m = origLines.length;
+  const n = fmtLines.length;
+
+  // Build LCS table
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (origLines[i - 1].trim() === fmtLines[j - 1].trim()) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+
+  // Backtrack to find diff
+  const diff: Array<{ type: 'same' | 'removed' | 'added'; origIdx?: number; fmtIdx?: number }> = [];
+  let oi = m, fi = n;
+  while (oi > 0 || fi > 0) {
+    if (oi > 0 && fi > 0 && origLines[oi - 1].trim() === fmtLines[fi - 1].trim()) {
+      diff.unshift({ type: 'same', origIdx: oi - 1, fmtIdx: fi - 1 });
+      oi--;
+      fi--;
+    } else if (fi > 0 && (oi === 0 || dp[oi][fi - 1] >= dp[oi - 1][fi])) {
+      diff.unshift({ type: 'added', fmtIdx: fi - 1 });
+      fi--;
+    } else {
+      diff.unshift({ type: 'removed', origIdx: oi - 1 });
+      oi--;
+    }
+  }
+
+  // Convert to DiffLine array, merging adjacent removed+added as modified
+  let idx = 0;
+  while (idx < diff.length) {
+    const d = diff[idx];
+    if (d.type === 'same') {
+      result.push({
+        type: 'same',
+        leftNum: d.origIdx! + 1,
+        rightNum: d.fmtIdx! + 1,
+        leftText: origLines[d.origIdx!],
+        rightText: fmtLines[d.fmtIdx!],
+      });
+      idx++;
+    } else if (d.type === 'removed' && idx + 1 < diff.length && diff[idx + 1].type === 'added') {
+      result.push({
+        type: 'modified',
+        leftNum: d.origIdx! + 1,
+        rightNum: diff[idx + 1].fmtIdx! + 1,
+        leftText: origLines[d.origIdx!],
+        rightText: fmtLines[diff[idx + 1].fmtIdx!],
+      });
+      idx += 2;
+    } else if (d.type === 'removed') {
+      result.push({
+        type: 'removed',
+        leftNum: d.origIdx! + 1,
+        leftText: origLines[d.origIdx!],
+      });
+      idx++;
+    } else {
+      result.push({
+        type: 'added',
+        rightNum: d.fmtIdx! + 1,
+        rightText: fmtLines[d.fmtIdx!],
+      });
+      idx++;
+    }
+  }
+
+  return result;
 }

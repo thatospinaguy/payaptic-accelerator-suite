@@ -36,7 +36,7 @@ export default function WarningPanel({ warnings }: WarningPanelProps) {
         </svg>
       </button>
       {!collapsed && (
-        <div className="px-4 pb-4">
+        <div className="max-h-64 overflow-y-auto px-4 pb-4">
           <ul className="space-y-1">
             {warnings.map((w, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-amber-700">
