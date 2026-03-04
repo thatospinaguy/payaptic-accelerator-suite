@@ -2,7 +2,7 @@ import { BalanceReportingNameRow } from './types';
 
 export const DEMO_ROWS: BalanceReportingNameRow[] = [
   {
-    legislativeDataGroupName: 'Chartwell CA LDG',
+    legislativeDataGroupName: 'Acme CA LDG',
     language: 'US',
     balanceName: 'TL Call back pay 1_0',
     balanceCode: 'TL Call back pay 1_0',
@@ -10,7 +10,7 @@ export const DEMO_ROWS: BalanceReportingNameRow[] = [
     description: 'Call back pay 1_0',
   },
   {
-    legislativeDataGroupName: 'Chartwell CA LDG',
+    legislativeDataGroupName: 'Acme CA LDG',
     language: 'FRC',
     balanceName: 'TL Call back pay 1_0',
     balanceCode: 'TL Call back pay 1_0',
@@ -18,7 +18,7 @@ export const DEMO_ROWS: BalanceReportingNameRow[] = [
     description: 'rappel au travail au taux horaire r\u00e9gulier',
   },
   {
-    legislativeDataGroupName: 'Chartwell CA LDG',
+    legislativeDataGroupName: 'Acme CA LDG',
     language: 'US',
     balanceName: 'TL Call back pay 1_0 Hours Worked',
     balanceCode: 'TL Call back pay 1_0 Hours Worked',
@@ -26,7 +26,7 @@ export const DEMO_ROWS: BalanceReportingNameRow[] = [
     description: 'Call back pay 1_0 Hours Worked',
   },
   {
-    legislativeDataGroupName: 'Chartwell CA LDG',
+    legislativeDataGroupName: 'Acme CA LDG',
     language: 'FRC',
     balanceName: 'TL Call back pay 1_0 Hours Worked',
     balanceCode: 'TL Call back pay 1_0 Hours Worked',
