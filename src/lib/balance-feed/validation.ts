@@ -1,8 +1,12 @@
-import { BalanceFeedRow, Warning } from './types';
+import { BalanceFeedRow, Warning, BalanceCodeLookup, ElementCodeLookup } from './types';
 import { KNOWN_INPUT_VALUE_CODES, DEFAULT_EFFECTIVE_START_DATE } from './constants';
 import { generateHdlLine } from './hdl-generator';
 
-export function validateRows(rows: BalanceFeedRow[]): Warning[] {
+export function validateRows(
+  rows: BalanceFeedRow[],
+  balanceLookup?: BalanceCodeLookup,
+  elementLookup?: ElementCodeLookup
+): Warning[] {
   const warnings: Warning[] = [];
 
   rows.forEach((row, i) => {
@@ -39,6 +43,36 @@ export function validateRows(rows: BalanceFeedRow[]): Warning[] {
         id: 'W3',
         message: `Row ${i + 1}: Empty fields (${empty.join(', ')}). This will produce empty segments in the HDL string.`,
       });
+    }
+
+    // W6: Balance name not found in lookup (FIX-10)
+    if (balanceLookup && balanceLookup.size > 0 && row.balanceName) {
+      const codes = balanceLookup.get(row.balanceName.trim());
+      if (!codes) {
+        warnings.push({
+          rowIndex: i,
+          id: 'W6',
+          message: `Row ${i + 1}: Balance name "${row.balanceName}" not found in lookup file.`,
+        });
+      } else if (codes.length > 1 && !row.balanceCode) {
+        warnings.push({
+          rowIndex: i,
+          id: 'W6',
+          message: `Row ${i + 1}: Balance name "${row.balanceName}" maps to ${codes.length} codes. Please select one.`,
+        });
+      }
+    }
+
+    // W7: Element name not found in lookup (FIX-10)
+    if (elementLookup && elementLookup.size > 0 && row.elementName) {
+      const code = elementLookup.get(row.elementName.trim());
+      if (!code) {
+        warnings.push({
+          rowIndex: i,
+          id: 'W7',
+          message: `Row ${i + 1}: Element name "${row.elementName}" not found in lookup file.`,
+        });
+      }
     }
   });
 

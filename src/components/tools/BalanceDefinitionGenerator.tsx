@@ -1,17 +1,19 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { BalanceFeedRow, Action } from '@/lib/balance-feed/types';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { BalanceFeedRow, Action, BalanceCodeLookup, ElementCodeLookup } from '@/lib/balance-feed/types';
 import { DEFAULT_EFFECTIVE_START_DATE } from '@/lib/balance-feed/constants';
 import { generateDatContent } from '@/lib/balance-feed/hdl-generator';
 import { validateRows } from '@/lib/balance-feed/validation';
-import { DEMO_ROWS } from '@/lib/balance-feed/demo-data';
+import { downloadTemplateXlsx } from '@/lib/balance-feed/file-export';
+import { LookupResult } from '@/lib/balance-feed/lookup-parser';
 import SessionDefaults from '@/components/balance-feed/SessionDefaults';
 import RowEntryTable from '@/components/balance-feed/RowEntryTable';
 import BulkPasteModal from '@/components/balance-feed/BulkPasteModal';
 import HdlPreview from '@/components/balance-feed/HdlPreview';
 import WarningPanel from '@/components/balance-feed/WarningPanel';
 import ExportButtons from '@/components/balance-feed/ExportButtons';
+import LookupUploadZone from '@/components/balance-feed/LookupUploadZone';
 
 export default function BalanceDefinitionGenerator() {
   // Session defaults
@@ -30,6 +32,10 @@ export default function BalanceDefinitionGenerator() {
   // Bulk paste modal
   const [showBulkPaste, setShowBulkPaste] = useState(false);
 
+  // FIX-10: V-lookup state
+  const [balanceLookup, setBalanceLookup] = useState<BalanceCodeLookup>(new Map());
+  const [elementLookup, setElementLookup] = useState<ElementCodeLookup>(new Map());
+
   // Apply session defaults to all rows when defaults change
   useEffect(() => {
     if (rows.length > 0) {
@@ -46,7 +52,10 @@ export default function BalanceDefinitionGenerator() {
 
   // Computed values
   const datContent = useMemo(() => generateDatContent(rows), [rows]);
-  const warnings = useMemo(() => validateRows(rows), [rows]);
+  const warnings = useMemo(
+    () => validateRows(rows, balanceLookup.size > 0 ? balanceLookup : undefined, elementLookup.size > 0 ? elementLookup : undefined),
+    [rows, balanceLookup, elementLookup]
+  );
 
   const warningCount = warnings.length;
   const rowCount = rows.length;
@@ -60,27 +69,45 @@ export default function BalanceDefinitionGenerator() {
     setSessionAction(action);
   }
 
-  function loadSampleData() {
-    setRows([...DEMO_ROWS]);
+  // FIX-06: Download template handler
+  function handleDownloadTemplate() {
+    downloadTemplateXlsx();
   }
+
+  // FIX-10: Lookup loaded handler
+  const handleLookupLoaded = useCallback((result: LookupResult) => {
+    setBalanceLookup(result.balanceLookup);
+    setElementLookup(result.elementLookup);
+  }, []);
+
+  // FIX-10: Clear lookup handler (T-10q)
+  const handleLookupCleared = useCallback(() => {
+    setBalanceLookup(new Map());
+    setElementLookup(new Map());
+  }, []);
 
   return (
     <div className="space-y-6">
-      {/* Status bar */}
-      <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-2">
-        <span className="text-sm text-gray-500">
-          {rowCount > 0
-            ? `${rowCount} row${rowCount !== 1 ? 's' : ''}${warningCount > 0 ? ` | ${warningCount} warning${warningCount !== 1 ? 's' : ''}` : ''} | Ready to export`
-            : 'No rows — add rows manually or load sample data to get started'}
-        </span>
-        {rowCount === 0 && (
-          <button
-            onClick={loadSampleData}
-            className="text-sm font-medium text-payaptic-ocean hover:underline"
-          >
-            Load Sample Data
-          </button>
-        )}
+      {/* FIX-06: Download Template section at top */}
+      <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3">
+        <div>
+          <span className="text-sm text-gray-500">
+            {rowCount > 0
+              ? `${rowCount} row${rowCount !== 1 ? 's' : ''}${warningCount > 0 ? ` | ${warningCount} warning${warningCount !== 1 ? 's' : ''}` : ''} | Ready to export`
+              : 'No rows — add rows manually or paste data to get started'}
+          </span>
+          {rowCount === 0 && (
+            <p className="text-xs text-gray-400 mt-1">
+              First time? Download the template, fill it out in Excel, then paste your data below.
+            </p>
+          )}
+        </div>
+        <button
+          onClick={handleDownloadTemplate}
+          className="btn-outline text-sm px-3 py-1.5 shrink-0"
+        >
+          Download Template
+        </button>
       </div>
 
       <SessionDefaults
@@ -94,6 +121,14 @@ export default function BalanceDefinitionGenerator() {
         setSessionAction={setSessionAction}
       />
 
+      {/* FIX-10: Lookup upload zone */}
+      <LookupUploadZone
+        onLookupLoaded={handleLookupLoaded}
+        onLookupCleared={handleLookupCleared}
+        balanceLookupSize={balanceLookup.size}
+        elementLookupSize={elementLookup.size}
+      />
+
       <RowEntryTable
         rows={rows}
         setRows={setRows}
@@ -105,6 +140,8 @@ export default function BalanceDefinitionGenerator() {
         onActionChange={handleActionChange}
         warnings={warnings}
         onBulkPaste={() => setShowBulkPaste(true)}
+        balanceLookup={balanceLookup.size > 0 ? balanceLookup : undefined}
+        elementLookup={elementLookup.size > 0 ? elementLookup : undefined}
       />
 
       <WarningPanel warnings={warnings} />
@@ -121,6 +158,8 @@ export default function BalanceDefinitionGenerator() {
           legislativeDataGroupName: legislativeDataGroup,
           effectiveStartDate: effectiveStartDate,
         }}
+        balanceLookup={balanceLookup.size > 0 ? balanceLookup : undefined}
+        elementLookup={elementLookup.size > 0 ? elementLookup : undefined}
       />
     </div>
   );
