@@ -133,7 +133,7 @@ export default function ElementEligibilityCostingLoader() {
   }
 
   function loadSampleData() {
-    setLegislativeDataGroupName('Chartwell CA LDG');
+    setLegislativeDataGroupName('Acme CA LDG');
     setEffectiveStartDate('1951/01/01');
     setEffectiveEndDate('4712/12/31');
     setEligibilityRows([...DEMO_ELIGIBILITY_ROWS]);
