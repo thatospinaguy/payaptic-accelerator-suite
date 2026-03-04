@@ -10,6 +10,7 @@ import {
   FolderTree,
   Languages,
   FileText,
+  TextCursorInput,
   X,
 } from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
@@ -23,6 +24,7 @@ const iconMap = {
   FolderTree,
   Languages,
   FileText,
+  TextCursorInput,
 } as const;
 
 export default function Sidebar() {

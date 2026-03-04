@@ -60,6 +60,16 @@ export const tools = [
     route: "/dashboard/tools/element-reporting-names-loader",
   },
   {
+    name: "Input Values Loader",
+    slug: "input-values-loader",
+    description:
+      "Generate HDL files for Oracle HCM element input value definitions with Yes/No normalization and configurable lookup references.",
+    icon: "TextCursorInput" as const,
+    status: "active" as const,
+    category: "Payroll",
+    route: "/dashboard/tools/input-values-loader",
+  },
+  {
     name: "Costing Load Generator",
     slug: "costing-load-generator",
     description:
