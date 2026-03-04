@@ -541,6 +541,7 @@ export function formatFormula(
   const formattedLines: string[] = [];
   let indent = 0;
   let inBlockComment = false;
+  let inInputsAre = false; // track INPUTS ARE continuation lines
   let i = 0;
 
   while (i < rawLines.length) {
@@ -592,6 +593,27 @@ export function formatFormula(
     if (isReturnStatement(trimmed)) {
       const processed = config.uppercaseKeywords ? uppercaseKeywordsInLine(trimmed) : trimmed;
       formattedLines.push(' '.repeat(indent * config.indentSize) + processed);
+      i++;
+      continue;
+    }
+
+    // INPUTS ARE continuation lines — indent continuations
+    if (inInputsAre) {
+      const processed = config.uppercaseKeywords ? uppercaseKeywordsInLine(trimmed) : trimmed;
+      formattedLines.push(' '.repeat((indent + 1) * config.indentSize) + processed);
+      if (!trimmed.endsWith(',')) {
+        inInputsAre = false;
+      }
+      i++;
+      continue;
+    }
+
+    if (/^INPUTS\s+ARE\b/i.test(trimmed)) {
+      const processed = config.uppercaseKeywords ? uppercaseKeywordsInLine(trimmed) : trimmed;
+      formattedLines.push(' '.repeat(indent * config.indentSize) + processed);
+      if (trimmed.endsWith(',')) {
+        inInputsAre = true;
+      }
       i++;
       continue;
     }
@@ -654,22 +676,13 @@ export function formatFormula(
     // Indent after IF (that doesn't have THEN on same line opening a paren block), ELSE, opening paren at end
     const upperTrimmed = strippedForKeyword.toUpperCase();
 
-    // If line ends with ( — indent next
+    // If line ends with ( — indent next line
     if (trimmed.endsWith('(')) {
       indent++;
     }
-    // ELSE followed by ( on same line — the ( at end already handles it
-    else if (/^ELSE\b/i.test(strippedForKeyword) && !trimmed.endsWith('(')) {
-      indent++;
-    }
-    // IF ... THEN with ( on same line
-    else if (/\bIF\b/i.test(strippedForKeyword) && /\bTHEN\b/i.test(strippedForKeyword) && !trimmed.endsWith('(')) {
-      // IF ... THEN without ( — next line might have (
-    }
-    // IF without THEN
-    else if (/^IF\b/i.test(strippedForKeyword) && !/\bTHEN\b/i.test(strippedForKeyword)) {
-      // Don't indent — THEN will handle it
-    }
+    // ELSE without ( on same line: do NOT bump indent here.
+    // The ( on the next line will handle it. This prevents double-indent
+    // when ELSE and ( are on separate lines.
 
     i++;
   }
