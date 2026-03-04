@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { BalanceFeedRow, AddSubtractHuman } from '@/lib/balance-feed/types';
+import { BalanceFeedRow, AddSubtractHuman, BalanceCodeLookup, ElementCodeLookup } from '@/lib/balance-feed/types';
 
 interface BulkPasteModalProps {
   isOpen: boolean;
@@ -11,6 +11,8 @@ interface BulkPasteModalProps {
     legislativeDataGroupName: string;
     effectiveStartDate: string;
   };
+  balanceLookup?: BalanceCodeLookup;
+  elementLookup?: ElementCodeLookup;
 }
 
 function parseAddSubtract(raw: string | undefined): AddSubtractHuman {
@@ -27,14 +29,15 @@ function isHeaderRow(cols: string[]): boolean {
   return (
     joined.includes('balancecode') ||
     joined.includes('balance code') ||
+    joined.includes('balance name') ||
     joined.includes('metadata') ||
     joined.includes('elementcode') ||
-    joined.includes('element code')
+    joined.includes('element code') ||
+    joined.includes('element name')
   );
 }
 
 function stripLeadingColumns(cols: string[]): string[] {
-  // If pasted data includes Action + "BalanceFeed" as first two columns, strip them
   if (
     cols.length >= 6 &&
     ['merge', 'delete'].includes(cols[0].trim().toLowerCase()) &&
@@ -42,7 +45,6 @@ function stripLeadingColumns(cols: string[]): string[] {
   ) {
     return cols.slice(2);
   }
-  // If just "BalanceFeed" is the first column (no action prefix)
   if (cols.length >= 5 && cols[0].trim().toLowerCase() === 'balancefeed') {
     return cols.slice(1);
   }
@@ -54,11 +56,52 @@ export default function BulkPasteModal({
   onClose,
   onImport,
   sessionDefaults,
+  balanceLookup,
+  elementLookup,
 }: BulkPasteModalProps) {
   const [pasteData, setPasteData] = useState('');
   const [parseError, setParseError] = useState('');
 
+  const lookupActive = !!(balanceLookup && balanceLookup.size > 0) || !!(elementLookup && elementLookup.size > 0);
+
   if (!isOpen) return null;
+
+  // FIX-10: Detect if a value is a known code or a name that needs lookup
+  function resolveBalanceValue(value: string): { balanceCode: string; balanceName?: string } {
+    if (!balanceLookup || balanceLookup.size === 0) {
+      return { balanceCode: value };
+    }
+    const trimmed = value.trim();
+    // Check if value is a known name
+    const codes = balanceLookup.get(trimmed);
+    if (codes) {
+      return { balanceCode: codes.length === 1 ? codes[0] : '', balanceName: trimmed };
+    }
+    // Check if value is already a code
+    let isCode = false;
+    balanceLookup.forEach((codeList) => {
+      if (codeList.includes(trimmed)) isCode = true;
+    });
+    if (isCode) return { balanceCode: trimmed };
+    return { balanceCode: value };
+  }
+
+  function resolveElementValue(value: string): { elementCode: string; elementName?: string } {
+    if (!elementLookup || elementLookup.size === 0) {
+      return { elementCode: value };
+    }
+    const trimmed = value.trim();
+    const code = elementLookup.get(trimmed);
+    if (code) {
+      return { elementCode: code, elementName: trimmed };
+    }
+    let isCode = false;
+    elementLookup.forEach((c) => {
+      if (c === trimmed) isCode = true;
+    });
+    if (isCode) return { elementCode: trimmed };
+    return { elementCode: value };
+  }
 
   function parsePastedData() {
     setParseError('');
@@ -77,44 +120,43 @@ export default function BulkPasteModal({
     for (let i = 0; i < lines.length; i++) {
       const rawCols = lines[i].split('\t');
 
-      // Skip header rows
       if (isHeaderRow(rawCols)) {
         continue;
       }
 
-      // Smart detection: strip Action + "BalanceFeed" columns if present
       const cols = stripLeadingColumns(rawCols);
 
-      let row: BalanceFeedRow;
-
-      if (cols.length >= 6) {
-        // 6+ columns: BalanceCode, EffectiveStartDate, LDG, ElementCode, InputValueCode, Add/Subtract
-        row = {
-          action: 'MERGE', // Action is controlled at session level
-          balanceCode: cols[0]?.trim() || '',
-          effectiveStartDate: cols[1]?.trim() || sessionDefaults.effectiveStartDate,
-          legislativeDataGroupName: cols[2]?.trim() || sessionDefaults.legislativeDataGroupName,
-          elementCode: cols[3]?.trim() || '',
-          inputValueCode: cols[4]?.trim() || '',
-          addSubtractHuman: parseAddSubtract(cols[5]),
-        };
-      } else if (cols.length >= 4) {
-        // 4-5 columns: BalanceCode, ElementCode, InputValueCode, Add/Subtract
-        row = {
-          action: 'MERGE', // Action is controlled at session level
-          balanceCode: cols[0]?.trim() || '',
-          effectiveStartDate: sessionDefaults.effectiveStartDate,
-          legislativeDataGroupName: sessionDefaults.legislativeDataGroupName,
-          elementCode: cols[1]?.trim() || '',
-          inputValueCode: cols[2]?.trim() || '',
-          addSubtractHuman: parseAddSubtract(cols[3]),
-        };
-      } else {
+      // FIX-07: Only 6-column format
+      if (cols.length < 6) {
         setParseError(
-          `Line ${i + 1} has only ${cols.length} column${cols.length !== 1 ? 's' : ''} (expected at least 4). Make sure you're pasting tab-separated data. Tip: Skip the Action and BalanceFeed columns when copying from your spreadsheet.`
+          `Line ${i + 1} has only ${cols.length} column${cols.length !== 1 ? 's' : ''} (expected 6). ` +
+          `Columns: Balance Code, Effective Start Date, Legislative Data Group, Element Code, Input Value Code, Add/Subtract.`
         );
         return;
       }
+
+      const balanceRaw = cols[0]?.trim() || '';
+      const elementRaw = cols[3]?.trim() || '';
+
+      const { balanceCode, balanceName } = lookupActive
+        ? resolveBalanceValue(balanceRaw)
+        : { balanceCode: balanceRaw };
+
+      const { elementCode, elementName } = lookupActive
+        ? resolveElementValue(elementRaw)
+        : { elementCode: elementRaw };
+
+      const row: BalanceFeedRow = {
+        action: 'MERGE',
+        balanceCode,
+        balanceName: balanceName || undefined,
+        effectiveStartDate: cols[1]?.trim() || sessionDefaults.effectiveStartDate,
+        legislativeDataGroupName: cols[2]?.trim() || sessionDefaults.legislativeDataGroupName,
+        elementCode,
+        elementName: elementName || undefined,
+        inputValueCode: cols[4]?.trim() || '',
+        addSubtractHuman: parseAddSubtract(cols[5]),
+      };
 
       rows.push(row);
     }
@@ -144,15 +186,20 @@ export default function BulkPasteModal({
         </div>
 
         <p className="text-sm text-gray-600 mb-2">
-          Paste tab-separated data from Excel or Google Sheets. Skip columns A &amp; B (Action and BalanceFeed) — they&apos;ll be set automatically. If you accidentally include them, they&apos;ll be detected and stripped.
+          Paste tab-separated data from Excel or Google Sheets. Skip columns A &amp; B (Action and BalanceFeed) &mdash; they&apos;ll be set automatically.
         </p>
         <ul className="text-xs text-gray-500 mb-4 list-disc list-inside space-y-1">
           <li>
-            <strong>4 columns:</strong> BalanceCode, ElementCode, InputValueCode, Add/Subtract
+            <strong>6 columns:</strong>{' '}
+            {lookupActive
+              ? 'Balance Name/Code, Effective Start Date, LDG, Element Name/Code, Input Value Code, Add/Subtract'
+              : 'Balance Code, Effective Start Date, LDG, Element Code, Input Value Code, Add/Subtract'}
           </li>
-          <li>
-            <strong>6 columns:</strong> BalanceCode, EffectiveStartDate, LDG, ElementCode, InputValueCode, Add/Subtract
-          </li>
+          {lookupActive && (
+            <li>
+              <strong>Lookup active:</strong> You can paste Balance Names or Element Names instead of codes &mdash; they&apos;ll be auto-resolved.
+            </li>
+          )}
         </ul>
 
         <textarea

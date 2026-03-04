@@ -19,18 +19,11 @@ export function generateZipFilename(): string {
   return `payroll-balance-definition-${timestampSuffix()}.zip`;
 }
 
-export function generateFolderName(): string {
-  return `PayrollBalanceDefinition_${timestampSuffix()}`;
-}
 
-export async function createZipBlob(datContent: string, folderName?: string): Promise<Blob> {
+export async function createZipBlob(datContent: string): Promise<Blob> {
+  // FIX-01: .dat file at root of zip — no subfolder
   const zip = new JSZip();
-  if (folderName) {
-    const folder = zip.folder(folderName);
-    folder!.file(DAT_FILENAME, datContent);
-  } else {
-    zip.file(DAT_FILENAME, datContent);
-  }
+  zip.file(DAT_FILENAME, datContent);
   return zip.generateAsync({ type: 'blob' });
 }
 
@@ -72,26 +65,17 @@ function downloadWorkbook(wb: XLSX.WorkBook, filename: string): void {
   downloadBlob(blob, filename);
 }
 
+// FIX-06: Download blank template (no data rows)
 export function downloadTemplateXlsx(): void {
   const headers = [
-    'Action',
-    'BalanceCode',
-    'EffectiveStartDate',
-    'LegislativeDataGroupName',
-    'ElementCode',
-    'InputValueCode',
-    'AddSubtract',
+    'Balance Code',
+    'Effective Start Date',
+    'Legislative Data Group',
+    'Element Code',
+    'Input Value Code',
+    'Add or Subtract',
   ];
-  const exampleRow = [
-    'MERGE',
-    'XX CP HWB Program Report Hours Worked',
-    '1951/01/01',
-    'US Legislative Data Group',
-    'XX Bereavement Pay Earnings Results',
-    'Hours Calculated',
-    'Add',
-  ];
-  const wb = createWorkbook(headers, [exampleRow]);
+  const wb = createWorkbook(headers, []);
   downloadWorkbook(wb, 'payroll-balance-template.xlsx');
 }
 

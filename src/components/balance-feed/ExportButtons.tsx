@@ -6,8 +6,6 @@ import {
   createDatBlob,
   downloadBlob,
   generateZipFilename,
-  generateFolderName,
-  downloadTemplateXlsx,
   downloadExportXlsx,
 } from '@/lib/balance-feed/file-export';
 import { DAT_FILENAME } from '@/lib/balance-feed/constants';
@@ -24,7 +22,6 @@ export default function ExportButtons({
 }: ExportButtonsProps) {
   const [copySuccess, setCopySuccess] = useState(false);
   const [zipFilename, setZipFilename] = useState(() => generateZipFilename());
-  const [folderName, setFolderName] = useState(() => generateFolderName());
 
   const mergeCount = rows.filter((r) => r.action === 'MERGE').length;
   const deleteCount = rows.filter((r) => r.action === 'DELETE').length;
@@ -41,12 +38,9 @@ export default function ExportButtons({
   }
 
   async function handleDownloadZip() {
-    const blob = await createZipBlob(datContent, folderName || undefined);
+    // FIX-01: .dat file at root of zip, no subfolder
+    const blob = await createZipBlob(datContent);
     downloadBlob(blob, zipFilename);
-  }
-
-  function handleDownloadTemplate() {
-    downloadTemplateXlsx();
   }
 
   function handleDownloadExcel() {
@@ -70,7 +64,25 @@ export default function ExportButtons({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 mb-4">
+      {/* FIX-08: Show zip/dat file names ABOVE the download buttons */}
+      <div className="mb-4">
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Zip filename
+          </label>
+          <input
+            type="text"
+            value={zipFilename}
+            onChange={(e) => setZipFilename(e.target.value)}
+            className="input-field w-full text-xs font-mono"
+          />
+        </div>
+        <p className="text-xs text-gray-400 mt-1">
+          The .dat file inside is always named &quot;{DAT_FILENAME}&quot;
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
         <button
           onClick={handleCopy}
           disabled={rows.length === 0}
@@ -99,41 +111,7 @@ export default function ExportButtons({
         >
           Export to Excel (.xlsx)
         </button>
-        <button
-          onClick={handleDownloadTemplate}
-          className="btn-outline text-sm"
-        >
-          Download Template
-        </button>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">
-            Zip filename
-          </label>
-          <input
-            type="text"
-            value={zipFilename}
-            onChange={(e) => setZipFilename(e.target.value)}
-            className="input-field w-full text-xs font-mono"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">
-            Folder name inside zip
-          </label>
-          <input
-            type="text"
-            value={folderName}
-            onChange={(e) => setFolderName(e.target.value)}
-            className="input-field w-full text-xs font-mono"
-          />
-        </div>
-      </div>
-      <p className="text-xs text-gray-400 mt-1">
-        The .dat file inside is always named &quot;{DAT_FILENAME}&quot;
-      </p>
     </div>
   );
 }
