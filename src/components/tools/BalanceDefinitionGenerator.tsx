@@ -80,6 +80,12 @@ export default function BalanceDefinitionGenerator() {
     setElementLookup(result.elementLookup);
   }, []);
 
+  // FIX-10: Clear lookup handler (T-10q)
+  const handleLookupCleared = useCallback(() => {
+    setBalanceLookup(new Map());
+    setElementLookup(new Map());
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* FIX-06: Download Template section at top */}
@@ -118,6 +124,7 @@ export default function BalanceDefinitionGenerator() {
       {/* FIX-10: Lookup upload zone */}
       <LookupUploadZone
         onLookupLoaded={handleLookupLoaded}
+        onLookupCleared={handleLookupCleared}
         balanceLookupSize={balanceLookup.size}
         elementLookupSize={elementLookup.size}
       />

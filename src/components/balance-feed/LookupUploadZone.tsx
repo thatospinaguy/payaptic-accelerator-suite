@@ -6,12 +6,14 @@ import { parseLookupFile, LookupResult } from '@/lib/balance-feed/lookup-parser'
 
 interface LookupUploadZoneProps {
   onLookupLoaded: (result: LookupResult) => void;
+  onLookupCleared: () => void;
   balanceLookupSize: number;
   elementLookupSize: number;
 }
 
 export default function LookupUploadZone({
   onLookupLoaded,
+  onLookupCleared,
   balanceLookupSize,
   elementLookupSize,
 }: LookupUploadZoneProps) {
@@ -98,6 +100,18 @@ export default function LookupUploadZone({
             <p className="text-xs text-gray-400 mt-1">
               Drop a new file to replace
             </p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setFileName('');
+                setError('');
+                onLookupCleared();
+              }}
+              className="mt-2 text-xs text-red-500 hover:text-red-700 underline"
+            >
+              Clear lookup
+            </button>
           </>
         ) : (
           <>
